@@ -2,6 +2,14 @@
 
 A small party quiz for 2–10 people or teams. Each team uses one phone. The host uses a separate browser/device. Internet access is required on every device, and the host should keep the host tab open.
 
+## Categories and audio rounds
+
+Use **Manage question bank** from a running game to edit questions for the next game without closing the current one. Use **Add 15 third-grade questions** once to append a pack covering math, science, English, and geography; duplicates from the pack are skipped. At lobby creation, choose all categories or a single category. Category names can be typed freely in the question editor.
+
+Use **Add audio question** for Guess the Audio. Fill in the question and four choices, select the correct answer, and optionally supply a direct HTTPS audio file URL or a path such as `./audio/clip-01.mp3`. If left blank, play the clip from another device. Local audio clips must first be uploaded to the repository's `audio/` folder (or attached in chat for help adding them). The host audio player does not upload files itself.
+
+Audio questions begin in a listening stage: answer buttons stay closed and no answer timer runs. Play the clip through the host's speakers, then click **Open answers & start timer**. The host can reveal and advance as usual. Test uploaded clips on the host's browser and speakers before the party. Audio URLs and correct answers are excluded from the player question payload until the answer reveal; repository assets themselves are public.
+
 ## One-time Firebase setup
 
 1. Open https://console.firebase.google.com/ and create a project named `party-quiz`. Google Analytics is optional; this game does not use it.
@@ -44,4 +52,4 @@ Refreshing the player tab restores the same game within the same browser session
 
 Firebase security rules protect host question banks and host controls, reject late/duplicate submissions, and prevent player score edits. The join screen checks the 10-player limit; that limit is not enforced by database rules. Correct answers are excluded from the public room until reveal. Authenticated clients with a code can read that room's public player names and scoreboard; use nicknames. The host is trusted to score games. This is a private-party app, not a competitive tournament service.
 
-The code can be checked locally without Firebase; end-to-end multiplayer and deployed database-rule verification require the configured project. No live Firebase or deployed multiplayer verification has been completed in this starter package.
+The local logic checks and live Firebase integration checks passed for the initial game. They covered two-player joins, host-only question access and score edits, duplicate/late submission rejection, and score publication. Browser playback of the user's audio clips still needs verification after clips are supplied.
