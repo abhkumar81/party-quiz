@@ -43,9 +43,30 @@ export function validateQuestions(value) {
     return normalizeQuestion({text:q.text.trim(),options:q.options.map(o=>o.trim()),correct:q.correct,seconds:q.seconds,category:q.category,type:q.type,audioUrl:q.audioUrl,mediaId:q.mediaId,mediaName:q.mediaName});
   });
 }
-export function standings(players = {}) {return Object.entries(players).map(([uid,p])=>({uid,...p})).sort((a,b)=>(b.score||0)-(a.score||0)||a.name.localeCompare(b.name));}
+export function rankingTime(uid,player,correctTimes={}) {
+  if(!(player.score>0))return 0;
+  const time=correctTimes[uid];
+  return Number.isFinite(time)&&time>=0?time:Infinity;
+}
+export function standings(players = {},correctTimes={}) {
+  const sorted=Object.entries(players).map(([uid,p])=>({uid,...p})).sort((a,b)=>(b.score||0)-(a.score||0)||rankingTime(a.uid,a,correctTimes)-rankingTime(b.uid,b,correctTimes)||a.name.localeCompare(b.name));
+  let rank=1;
+  return sorted.map((p,i)=>{if(i>0){const previous=sorted[i-1];if((p.score||0)!==(previous.score||0)||rankingTime(p.uid,p,correctTimes)!==rankingTime(previous.uid,previous,correctTimes))rank=i+1;}return {...p,rank};});
+}
 export function publicQuestion(q,index,total,endsAt) {return {text:q.text,options:q.options,index,total,endsAt,category:q.category||'General Trivia',type:q.type||'text'};}
-export function roundState(q,index,total,now) {const listening=['audio','video'].includes(q.type);return {phase:listening?'listening':'question',question:publicQuestion(q,index,total,listening?0:now+q.seconds*1000),correct:null};}
+export function roundState(q,index,total,now) {const listening=['audio','video'].includes(q.type);return {phase:listening?'listening':'question',question:{...publicQuestion(q,index,total,listening?0:now+q.seconds*1000),startedAt:listening?0:now},correct:null};}
 export function scoreRound(players,submissions,correct) {
   return Object.fromEntries(Object.entries(players||{}).map(([uid,p])=>[uid,{...p,score:(p.score||0)+(submissions?.[uid]?.choice===correct?1000:0)}]));
+}
+export function scoreRoundWithTiming(players,correctTimes,submissions,correct,question) {
+  const start=question?.startedAt,end=question?.endsAt;
+  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start)throw Error('The answer timer is missing. Start a fresh game to use speed ranking.');
+  const nextTimes={...correctTimes};
+  for(const [uid] of Object.entries(players||{})){
+    const submission=submissions?.[uid];
+    if(submission?.choice!==correct)continue;
+    const elapsed=Number.isFinite(submission.submittedAt)?Math.max(0,Math.min(end-start,submission.submittedAt-start)):end-start;
+    nextTimes[uid]=(Number.isFinite(nextTimes[uid])?nextTimes[uid]:0)+elapsed;
+  }
+  return {players:scoreRound(players,submissions,correct),correctTimes:nextTimes};
 }
