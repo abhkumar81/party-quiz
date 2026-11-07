@@ -1,4 +1,4 @@
-# Party Quiz
+# Mihir Birthday Game
 
 A small party quiz for 2–10 people or teams. Each team uses one phone. The host uses a separate browser/device. Internet access is required on every device, and the host should keep the host tab open.
 
