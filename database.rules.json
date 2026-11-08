@@ -15,11 +15,17 @@
         ".validate": "newData.hasChildren(['hostUid', 'gameId', 'phase']) && (!data.exists() || newData.child('hostUid').val() === data.child('hostUid').val())",
         "players": {
           "$uid": {
-            ".write": "auth != null && auth.uid === $uid && !data.exists() && root.child('rooms').child($code).child('phase').val() === 'lobby'",
+            ".write": "auth != null && auth.uid === $uid && !data.exists() && (root.child('rooms').child($code).child('phase').val() === 'lobby' || root.child('rooms').child($code).child('phase').val() === 'listening' || root.child('rooms').child($code).child('phase').val() === 'question' || root.child('rooms').child($code).child('phase').val() === 'reveal')",
             ".validate": "newData.hasChildren(['name', 'score'])",
-            "name": {".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24"},
-            "score": {".validate": "newData.isNumber() && (root.child('rooms').child($code).child('hostUid').val() === auth.uid || newData.val() === 0)"},
-            "$other": {".validate": false}
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24"
+            },
+            "score": {
+              ".validate": "newData.isNumber() && (root.child('rooms').child($code).child('hostUid').val() === auth.uid || newData.val() === 0)"
+            },
+            "$other": {
+              ".validate": false
+            }
           }
         }
       }
@@ -33,9 +39,15 @@
             ".read": "auth != null && auth.uid === $uid",
             ".write": "auth != null && auth.uid === $uid && !data.exists() && newData.exists() && root.child('rooms').child($code).child('players').child($uid).exists() && root.child('rooms').child($code).child('phase').val() === 'question' && root.child('rooms').child($code).child('question').child('index').val() + '' === $index && now <= root.child('rooms').child($code).child('question').child('endsAt').val()",
             ".validate": "newData.hasChildren(['choice', 'submittedAt'])",
-            "choice": {".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3 && newData.val() % 1 === 0"},
-            "submittedAt": {".validate": "newData.isNumber() && newData.val() === now"},
-            "$other": {".validate": false}
+            "choice": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3 && newData.val() % 1 === 0"
+            },
+            "submittedAt": {
+              ".validate": "newData.isNumber() && newData.val() === now"
+            },
+            "$other": {
+              ".validate": false
+            }
           }
         }
       }

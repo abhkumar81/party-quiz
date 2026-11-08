@@ -59,3 +59,5 @@ Start a **new lobby** after installing the speed-ranking update. Existing games 
 Firebase security rules protect host question banks and host controls, reject late/duplicate submissions, and prevent player score edits. The join screen checks the 10-player limit; that limit is not enforced by database rules. Correct answers are excluded from the public room until reveal. Authenticated clients with a code can read that room's public player names and scoreboard; use nicknames. The host is trusted to score games. This is a private-party app, not a competitive tournament service.
 
 The local logic checks and live Firebase integration checks passed for the initial game. They covered two-player joins, host-only question access and score edits, duplicate/late submission rejection, and score publication. Browser playback of the user's audio clips still needs verification after clips are supplied.
+
+Players may join an active game (up to 10 teams), starting at zero points. They can answer the current question if its timer is still open. Finished games reject new players.
