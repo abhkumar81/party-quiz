@@ -54,7 +54,7 @@ export function standings(players = {},correctTimes={}) {
   return sorted.map((p,i)=>{if(i>0){const previous=sorted[i-1];if((p.score||0)!==(previous.score||0)||rankingTime(p.uid,p,correctTimes)!==rankingTime(previous.uid,previous,correctTimes))rank=i+1;}return {...p,rank};});
 }
 export function publicQuestion(q,index,total,endsAt) {return {text:q.text,options:q.options,index,total,endsAt,category:q.category||'General Trivia',type:q.type||'text'};}
-export function roundState(q,index,total,now) {const listening=['audio','video'].includes(q.type);return {phase:listening?'listening':'question',question:{...publicQuestion(q,index,total,listening?0:now+q.seconds*1000),startedAt:listening?0:now},correct:null};}
+export function roundState(q,index,total,now) {const listening=['audio','video'].includes(q.type);return {phase:listening?'listening':'question',question:{...publicQuestion(q,index,total,listening?0:now+q.seconds*1000),durationMs:q.seconds*1000,startedAt:listening?0:now},correct:null};}
 export function scoreRound(players,submissions,correct) {
   return Object.fromEntries(Object.entries(players||{}).map(([uid,p])=>[uid,{...p,score:(p.score||0)+(submissions?.[uid]?.choice===correct?1000:0)}]));
 }
@@ -69,4 +69,21 @@ export function scoreRoundWithTiming(players,correctTimes,submissions,correct,qu
     nextTimes[uid]=(Number.isFinite(nextTimes[uid])?nextTimes[uid]:0)+elapsed;
   }
   return {players:scoreRound(players,submissions,correct),correctTimes:nextTimes};
+}
+export function speedPoints(elapsedMs,durationMs) {
+  if(!Number.isFinite(elapsedMs)||!Number.isFinite(durationMs)||durationMs<=0||elapsedMs<0||elapsedMs>durationMs)return 0;
+  return elapsedMs<500?1000:Math.round(1000*(1-elapsedMs/durationMs/2));
+}
+export function scoreRoundWithSpeedPoints(players,correctTimes,correctCounts,submissions,correct,question) {
+  const start=question?.startedAt,end=question?.endsAt,duration=question?.durationMs??end-start;
+  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start||!Number.isFinite(duration)||duration<=0)throw Error('The answer timer is missing. Start a fresh game.');
+  const nextPlayers={},nextTimes={...correctTimes},nextCounts={...correctCounts},roundPoints={};
+  for(const [uid,p] of Object.entries(players||{})){
+    const s=submissions?.[uid],elapsed=s?.submittedAt-start;
+    const valid=s?.choice===correct&&Number.isFinite(s.submittedAt)&&s.submittedAt>=start&&s.submittedAt<=end;
+    const points=valid?speedPoints(Math.min(elapsed,duration),duration):0;
+    nextPlayers[uid]={...p,score:(p.score||0)+points};roundPoints[uid]=points;
+    if(points>0){nextTimes[uid]=(nextTimes[uid]||0)+elapsed;nextCounts[uid]=(nextCounts[uid]||0)+1;}
+  }
+  return {players:nextPlayers,correctTimes:nextTimes,correctCounts:nextCounts,roundPoints};
 }
